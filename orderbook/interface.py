@@ -2,12 +2,18 @@ from collections import namedtuple
 import json
 import uuid
 import redis
+import sys
 import redis_keys
+
+sys.path.append('../')
+
+from orderbook.kafka_util import get_order_producer
 
 red = redis.StrictRedis()
 red_sub = red.pubsub()
 
 Order = namedtuple('Order', 'side price priority time amount id')
+order_producer = get_order_producer()
 
 
 def create_order(side, price, priority, time, amount, oid=None):
@@ -27,7 +33,7 @@ def get_ticker():
     return json.loads(ticker)
 
 
-def get_next_order(side='bid', pop=False):
+def get_next_order(side='bid', pop=False, raw=False):
     """
     Get the next order, using the following priorities in descending order: priority, price, time, amount, order id
 
@@ -42,7 +48,10 @@ def get_next_order(side='bid', pop=False):
         raw_order = red.zrange(redis_keys.RKEY['book_side'] % side, 0, 0, withscores=True)
     if raw_order is None or len(raw_order) == 0:
         return None
-    order = decode_order(side, raw_order)
+    if not raw:
+        order = decode_order(side, raw_order)
+    else:
+        order = raw_order
     if pop:
         order_key, price = get_order_details(raw_order)
         rem_order(side, order_key)
@@ -95,7 +104,7 @@ def insert_order(order, **kwargs):
     insert_many_orders([order], **kwargs)
 
 
-def insert_many_orders(orders):
+def insert_many_orders(orders, notify=True):
     """
     Insert a list of orders.
 
@@ -117,3 +126,5 @@ def insert_many_orders(orders):
     if len(asks) > 0:
         #print "zadding %s" % asks
         red.zadd(redis_keys.RKEY['book_side'] % 'ask', *asks)
+    if notify:
+        order_producer.send_messages('order', '')  # empty message is a notification that new orders are available

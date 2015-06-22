@@ -1,23 +1,48 @@
 import sys
+import threading
 import time
 import uuid
+from orderbook.kafka_util import get_order_consumer
 
-sys.path.append('../orderbook')
+sys.path.append('../')
+from orderbook.interface import insert_many_orders, Order, create_order
+from orderbook.matcher import match_orders
 
-from interface import insert_many_orders, Order
 
-
-def create_order_book(price=500.0, tsize=0.1, size=10, overlap=0, priority=0.0):
+def create_order_book(price=500.0, tsize=0.1, size=10, offset=0, priority=0.0, insert=True):
     bids = []
     asks = []
     for i in range(0, size):
-        bid = Order('bid', price * (1.0 - float(i - overlap) / 100.0), str(priority),
-                    str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
+        base_price = price * (1 + (float(i) / float(size)) / 2)
+        bid = create_order('bid', base_price + offset, priority,
+                           round(time.time(), 2), tsize, uuid.uuid4())
 
-        ask = Order('ask', price * (1.0 + float(i - overlap) / 100.0), str(priority),
-                    str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
+        ask = Order('ask', base_price - offset, priority,
+                    round(time.time(), 2), tsize, uuid.uuid4())
 
         bids.append(bid)
         asks.append(ask)
-        insert_many_orders([bid, ask])
+        if insert:
+            insert_many_orders([bid, ask])
     return {'bids': bids, 'asks': asks}
+
+
+class OrderConsumer(threading.Thread):
+    daemon = False
+
+    def run(self):
+        for message in get_order_consumer():
+            if message.message.value == 'terminate':
+                return
+            while match_orders():
+                pass
+
+
+threads = [
+    OrderConsumer()
+]
+
+
+def run_consumers():
+    for t in threads:
+        t.start()

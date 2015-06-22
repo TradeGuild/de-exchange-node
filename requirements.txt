@@ -1,0 +1,14 @@
+redis
+kafka-python
+bson
+ecdsa
+graypy
+json
+sqlalchemy
+jsonschema
+alchemyjsonschema
+
+Flask
+
+flask-mrest
+mrest-client

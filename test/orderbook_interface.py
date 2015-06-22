@@ -8,9 +8,9 @@ from util import create_order_book
 red = redis.StrictRedis()
 red_sub = red.pubsub()
 
-sys.path.append('../orderbook')
+sys.path.append('../')
 
-from interface import get_ticker, get_next_order, Order, insert_order, insert_many_orders, create_order
+from orderbook.interface import get_next_order, insert_order, insert_many_orders, create_order
 
 
 class CreateOrders(unittest.TestCase):
@@ -52,9 +52,9 @@ class GetOrders(unittest.TestCase):
         red.flushall()
 
     def test_simple_book(self):
-        self.orders = create_order_book(price=250.0, tsize=0.1, size=10, overlap=10, priority=0.0)
-        lastbid = 300
-        lastask = 200
+        self.orders = create_order_book(price=250.0, tsize=0.1, size=10, offset=10, priority=0.0)
+        lastbid = 500
+        lastask = 20
         while True:
             o = get_next_order('bid', pop=True)
             if not o:
