@@ -1,5 +1,6 @@
 from collections import namedtuple
 import json
+import uuid
 import redis
 import redis_keys
 
@@ -7,6 +8,12 @@ red = redis.StrictRedis()
 red_sub = red.pubsub()
 
 Order = namedtuple('Order', 'side price priority time amount id')
+
+
+def create_order(side, price, priority, time, amount, oid=None):
+    if oid is None:
+        oid = uuid.uuid4()
+    return Order(side, float(price), float(priority), float(time), float(amount), oid)
 
 
 def get_ticker():
@@ -54,7 +61,7 @@ def decode_order(side, raw_order):
     else:
         order_key, price = get_order_details(raw_order)
     olist = order_key.split(redis_keys.SEP)
-    return Order(side, price, *olist)
+    return create_order(side, price, *olist)
 
 
 def rem_order(side, order_key):

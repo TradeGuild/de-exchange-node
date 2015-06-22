@@ -21,9 +21,9 @@ def sort_orders_by_priority(bid, ask):
     elif ask.priority > bid.priority:
         return ask, bid
     else:
-        if float(bid.time) < float(ask.time):
+        if bid.time < ask.time:
             return bid, ask
-        elif float(ask.time) < float(bid.time):
+        elif ask.time < bid.time:
             return ask, bid
         else:
             return bid, ask
@@ -36,8 +36,8 @@ def match_orders():
         return False
     if ask.price <= bid.price:
         horder, lorder = sort_orders_by_priority(bid, ask)
-        bid_amount = float(bid.amount)
-        ask_amount = float(ask.amount)
+        bid_amount = bid.amount
+        ask_amount = ask.amount
         trade_amount = min(bid_amount, ask_amount)
         trade = Trade(PAIR, lorder.price, trade_amount, bid.id, ask.id)
         # print "creating trade %s" % repr(trade)
@@ -47,14 +47,14 @@ def match_orders():
             # print "removing bid %s" % bid.id
             rem_order('bid', create_order_key(bid))
         else:
-            newbid = Order('bid', bid.price, bid.priority, bid.time, bid_amount-trade_amount, bid.id)
+            newbid = create_order('bid', bid.price, bid.priority, bid.time, bid_amount-trade_amount, bid.id)
             # print "updating bid to %s" % repr(newbid)
             update_order(newbid)
         if ask_remainder == 0:
             # print "removing ask %s" % ask.id
             rem_order('ask', create_order_key(ask))
         else:
-            newask = Order('ask', ask.price, ask.priority, ask.time, ask_amount-trade_amount, ask.id)
+            newask = create_order('ask', ask.price, ask.priority, ask.time, ask_amount-trade_amount, ask.id)
             # print "updating ask to %s" % repr(newask)
             update_order(newask)
 
@@ -67,8 +67,8 @@ if __name__ == '__main__':
     from util import create_order_book
     red.flushall()
 
-    # insert_many_orders([Order('bid', 240, 1.0, str(round(time.time(), 2)), 0.2, str(uuid.uuid4())),
-    #                     Order('ask', 238, 0.0, str(round(time.time(), 2)), 0.1, str(uuid.uuid4()))])
+    # insert_many_orders([create_order('bid', 240, 1.0, str(round(time.time(), 2)), 0.2, str(uuid.uuid4())),
+    #                     create_order('ask', 238, 0.0, str(round(time.time(), 2)), 0.1, str(uuid.uuid4()))])
     create_order_book(price=250.0, tsize=0.1, size=10, overlap=10, priority=1.0)
     create_order_book(price=250.0, tsize=0.2, size=10, overlap=5, priority=0.0)
     while 1:
