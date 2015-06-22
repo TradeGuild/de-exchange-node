@@ -1,5 +1,4 @@
 """
-The RKEY_PREFIX can be used to set a common prefix to every key stored.
 SEP defines the separator used to create fake namespaces in key names.
 
 The entries in RKEY are used to both document what's available and
@@ -15,8 +14,8 @@ RKEY = {
     # helper to produce one of the two keys above
     'book_side': 'book' + SEP + '%s',
 
-    # members in the sorted are built based on the price, timestamp, amount (volume)
-    # and an order id, e.g. book_member % (price, time.time(), 3.2, order_id)
+    # members in the sorted are built based on the priority, timestamp, amount (volume)
+    # and an order id, e.g. book_member % (priority, time.time(), 3.2, order_id)
     # This ordering is designed to take advantage of the Lexicographical scores sorting.
     'book_member': '%s' + SEP + '%s' + SEP + '%s' + SEP + '%s',
 

@@ -21,9 +21,9 @@ class CreateOrders(unittest.TestCase):
         now = str(round(time.time(), 2))
         oid = str(uuid.uuid4())
         amount = str(1.01)
-        price = str(240)
-        priority = 0.0
-        order = Order('bid', priority, price, now, amount, oid)
+        price = 240
+        priority = str(0.0)
+        order = Order('bid', price, priority, now, amount, oid)
         insert_order(order)
         time.sleep(0.1)
         got_order = pop_next_order('bid')
@@ -35,10 +35,10 @@ class CreateOrders(unittest.TestCase):
         ask_oid = str(uuid.uuid4())
         bid_oid = str(uuid.uuid4())
         amount = str(1.01)
-        price = str(240)
-        priority = 0.0
-        bid = Order('bid', priority, price, bid_now, amount, bid_oid)
-        ask = Order('ask', priority, price, ask_now, amount, ask_oid)
+        price = 240
+        priority = str(0.0)
+        bid = Order('bid', price, priority, bid_now, amount, bid_oid)
+        ask = Order('ask', price, priority, ask_now, amount, ask_oid)
         insert_many_orders((bid, ask))
         time.sleep(0.1)
         got_bid = pop_next_order('bid')
@@ -52,12 +52,11 @@ class GetOrders(unittest.TestCase):
         red.flushall()
 
     def test_simple_book(self):
-        self.orders = create_order_book(price=250.0, tsize=0.1, size=10, overlap=0, priority=0.0)
+        self.orders = create_order_book(price=250.0, tsize=0.1, size=10, overlap=10, priority=0.0)
         lastbid = 300
         lastask = 200
         while True:
             o = pop_next_order('bid')
-            print o
             if not o:
                 break
             self.assertLessEqual(float(o.price), lastbid)
@@ -65,7 +64,6 @@ class GetOrders(unittest.TestCase):
 
         while True:
             o = pop_next_order('ask')
-            print o
             if not o:
                 break
             self.assertGreaterEqual(float(o.price), lastask)
@@ -73,9 +71,9 @@ class GetOrders(unittest.TestCase):
 
     def test_priority_sort(self):
         tsize = 1.01
-        loworder = Order('ask', 0.0, str(241), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
-        mediumorder = Order('ask', 1.0, str(240), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
-        highorder = Order('ask', 2.0, str(239), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
+        highorder = Order('ask', 240, str(2.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
+        mediumorder = Order('ask', 240, str(1.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
+        loworder = Order('ask', 240, str(0.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
 
         insert_many_orders([loworder, highorder, mediumorder])
 
@@ -88,9 +86,9 @@ class GetOrders(unittest.TestCase):
 
     def test_price_sort(self):
         tsize = 1.01
-        loworder = Order('ask', 0.0, str(239), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
-        mediumorder = Order('ask', 0.0, str(240), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
-        highorder = Order('ask', 0.0, str(241), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
+        loworder = Order('ask', 239, str(2.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
+        mediumorder = Order('ask', 240, str(1.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
+        highorder = Order('ask', 241, str(0.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
 
         insert_many_orders([loworder, highorder, mediumorder])
 
@@ -103,11 +101,11 @@ class GetOrders(unittest.TestCase):
 
     def test_time_sort(self):
         tsize = 1.01
-        loworder = Order('ask', 0.0, str(240), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
+        loworder = Order('ask', 240, str(0.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
         time.sleep(0.1)
-        mediumorder = Order('ask', 0.0, str(240), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
+        mediumorder = Order('ask', 240, str(0.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
         time.sleep(0.1)
-        highorder = Order('ask', 0.0, str(240), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
+        highorder = Order('ask', 240, str(0.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
 
         insert_many_orders([loworder, highorder, mediumorder])
 
@@ -120,11 +118,11 @@ class GetOrders(unittest.TestCase):
 
     def test_amount_sort(self):
         now = str(round(time.time(), 2))
-        loworder = Order('ask', 0.0, str(240), now, str(1), str(uuid.uuid4()))
+        loworder = Order('ask', 240, str(0.0), now, str(1), str(uuid.uuid4()))
         time.sleep(0.1)
-        mediumorder = Order('ask', 0.0, str(240), now, str(2), str(uuid.uuid4()))
+        mediumorder = Order('ask', 240, str(0.0), now, str(2), str(uuid.uuid4()))
         time.sleep(0.1)
-        highorder = Order('ask', 0.0, str(240), now, str(3), str(uuid.uuid4()))
+        highorder = Order('ask', 240, str(0.0), now, str(3), str(uuid.uuid4()))
 
         insert_many_orders([loworder, highorder, mediumorder])
 

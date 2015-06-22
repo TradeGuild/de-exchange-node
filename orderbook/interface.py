@@ -6,7 +6,7 @@ import redis_keys
 red = redis.StrictRedis()
 red_sub = red.pubsub()
 
-Order = namedtuple('Order', 'side priority price time amount id')
+Order = namedtuple('Order', 'side price priority time amount id')
 
 
 def get_ticker():
@@ -34,15 +34,15 @@ def pop_next_order(side='bid'):
     if raw_order is None or len(raw_order) == 0:
         return None
     order_key = raw_order[0][0]
-    priority = raw_order[0][1]
+    price = raw_order[0][1]
     olist = order_key.split(redis_keys.SEP)
-    order = Order(side, priority, *olist)
+    order = Order(side, price, *olist)
     red.zrem(redis_keys.RKEY['book_side'] % side, order_key)
     return order
 
 
 def create_order_key(order):
-    return redis_keys.RKEY['book_member'] % (order.price, order.time, order.amount, order.id)
+    return redis_keys.RKEY['book_member'] % (order.priority, order.time, order.amount, order.id)
 
 
 def insert_order(order, **kwargs):
@@ -62,13 +62,15 @@ def insert_many_orders(orders):
     asks = []
     for order in orders:
         if order.side == 'bid':
-            bids.append(order.priority)
+            bids.append(order.price)
             bids.append(create_order_key(order))
         if order.side == 'ask':
-            asks.append(order.priority)
+            asks.append(order.price)
             asks.append(create_order_key(order))
 
-    if bids:
+    if len(bids) > 0:
+        #print "zadding %s" % bids
         red.zadd(redis_keys.RKEY['book_side'] % 'bid', *bids)
-    if asks:
+    if len(asks) > 0:
+        #print "zadding %s" % asks
         red.zadd(redis_keys.RKEY['book_side'] % 'ask', *asks)
