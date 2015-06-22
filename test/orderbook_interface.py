@@ -10,7 +10,7 @@ red_sub = red.pubsub()
 
 sys.path.append('../orderbook')
 
-from interface import get_ticker, pop_next_order, Order, insert_order, insert_many_orders
+from interface import get_ticker, get_next_order, Order, insert_order, insert_many_orders
 
 
 class CreateOrders(unittest.TestCase):
@@ -26,7 +26,7 @@ class CreateOrders(unittest.TestCase):
         order = Order('bid', price, priority, now, amount, oid)
         insert_order(order)
         time.sleep(0.1)
-        got_order = pop_next_order('bid')
+        got_order = get_next_order('bid', pop=True)
         self.assertEqual(got_order, order)
 
     def test_insert_many_orders(self):
@@ -41,9 +41,9 @@ class CreateOrders(unittest.TestCase):
         ask = Order('ask', price, priority, ask_now, amount, ask_oid)
         insert_many_orders((bid, ask))
         time.sleep(0.1)
-        got_bid = pop_next_order('bid')
+        got_bid = get_next_order('bid', pop=True)
         self.assertEqual(got_bid, bid)
-        got_ask = pop_next_order('ask')
+        got_ask = get_next_order('ask', pop=True)
         self.assertEqual(got_ask, ask)
 
 
@@ -56,14 +56,14 @@ class GetOrders(unittest.TestCase):
         lastbid = 300
         lastask = 200
         while True:
-            o = pop_next_order('bid')
+            o = get_next_order('bid', pop=True)
             if not o:
                 break
             self.assertLessEqual(float(o.price), lastbid)
             lastbid = float(o.price)
 
         while True:
-            o = pop_next_order('ask')
+            o = get_next_order('ask', pop=True)
             if not o:
                 break
             self.assertGreaterEqual(float(o.price), lastask)
@@ -77,9 +77,9 @@ class GetOrders(unittest.TestCase):
 
         insert_many_orders([loworder, highorder, mediumorder])
 
-        first_got = pop_next_order('ask')
-        second_got = pop_next_order('ask')
-        third_got = pop_next_order('ask')
+        first_got = get_next_order('ask', pop=True)
+        second_got = get_next_order('ask', pop=True)
+        third_got = get_next_order('ask', pop=True)
         self.assertEqual(first_got, loworder)
         self.assertEqual(second_got, mediumorder)
         self.assertEqual(third_got, highorder)
@@ -92,9 +92,9 @@ class GetOrders(unittest.TestCase):
 
         insert_many_orders([loworder, highorder, mediumorder])
 
-        first_got = pop_next_order('ask')
-        second_got = pop_next_order('ask')
-        third_got = pop_next_order('ask')
+        first_got = get_next_order('ask', pop=True)
+        second_got = get_next_order('ask', pop=True)
+        third_got = get_next_order('ask', pop=True)
         self.assertEqual(first_got, loworder)
         self.assertEqual(second_got, mediumorder)
         self.assertEqual(third_got, highorder)
@@ -109,9 +109,9 @@ class GetOrders(unittest.TestCase):
 
         insert_many_orders([loworder, highorder, mediumorder])
 
-        first_got = pop_next_order('ask')
-        second_got = pop_next_order('ask')
-        third_got = pop_next_order('ask')
+        first_got = get_next_order('ask', pop=True)
+        second_got = get_next_order('ask', pop=True)
+        third_got = get_next_order('ask', pop=True)
         self.assertEqual(first_got, loworder)
         self.assertEqual(second_got, mediumorder)
         self.assertEqual(third_got, highorder)
@@ -126,9 +126,9 @@ class GetOrders(unittest.TestCase):
 
         insert_many_orders([loworder, highorder, mediumorder])
 
-        first_got = pop_next_order('ask')
-        second_got = pop_next_order('ask')
-        third_got = pop_next_order('ask')
+        first_got = get_next_order('ask', pop=True)
+        second_got = get_next_order('ask', pop=True)
+        third_got = get_next_order('ask', pop=True)
         self.assertEqual(first_got, loworder)
         self.assertEqual(second_got, mediumorder)
         self.assertEqual(third_got, highorder)
