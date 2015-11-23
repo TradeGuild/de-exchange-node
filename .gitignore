@@ -62,5 +62,6 @@ target/
 # sqllite
 *.sqlite3
 
-# application logs
-MREST-app.log
+# temp files
+*~
+

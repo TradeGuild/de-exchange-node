@@ -10,7 +10,8 @@ red_sub = red.pubsub()
 
 sys.path.append('../')
 
-from orderbook.interface import get_next_order, insert_order, insert_many_orders, create_order
+from dex_node.interface import (get_next_order, insert_order,
+                                insert_many_orders, create_order)
 
 
 class CreateOrders(unittest.TestCase):
@@ -136,3 +137,4 @@ class GetOrders(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

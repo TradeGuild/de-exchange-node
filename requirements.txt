@@ -1,14 +1,17 @@
+# messaging
+mq_client
+amqp
+pika
+
+# data storage
 redis
-kafka-python
-bson
-ecdsa
-graypy
-json
 sqlalchemy
+
+# encoding
 jsonschema
 alchemyjsonschema
 
+# web
 Flask
 
-flask-mrest
-mrest-client
+

@@ -1,25 +1,19 @@
 import os
-import subprocess
+import threading
 import sys
 import unittest
 import uuid
 import redis
 import time
-from util import run_consumers
 
 red = redis.StrictRedis()
 red_sub = red.pubsub()
+HERE = os.path.dirname(os.path.abspath(__file__))
+OB_DIR = os.path.join(os.path.dirname(HERE), 'dex_node')
 
 sys.path.append('../')
-from orderbook.matcher import match_orders, Trade
-from orderbook.interface import get_next_order, Order, insert_many_orders, create_order
-from orderbook.kafka_util import get_order_producer
-
-HERE = os.path.dirname(os.path.abspath(__file__))
-OB_DIR = os.path.join(os.path.dirname(HERE), 'orderbook')
-
-command = lambda x, **kwargs: subprocess.Popen(x, cwd=OB_DIR, **kwargs)
-order_producer = get_order_producer()
+from dex_node.matcher import match_orders, Trade, trade_mq_client, mrunner
+from dex_node.interface import get_next_order, Order, insert_many_orders, create_order
 
 
 class MatchOrders(unittest.TestCase):
@@ -85,8 +79,7 @@ class MatchOrders(unittest.TestCase):
         t1 = time.time()
         insert_many_orders(book, notify=False)
         t2 = time.time()
-        order_producer.send_messages('order', '')
-        while match_orders(notify=False):
+        while match_orders():
             pass
         t3 = time.time()
         self.assertLessEqual(t2 - t1, 3)  # calibrated on Ira's laptop then doubled for margin
@@ -94,8 +87,18 @@ class MatchOrders(unittest.TestCase):
         print "time to insert 100k orders: %s" % (t2 - t1)
         print "time to process 100k orders: %s" % (t3 - t2)
 
+
+class MatchThread(threading.Thread):
+
+   def run(self):
+      trade_mq_client.run()
+
+class MatchOrdersQueue(unittest.TestCase):
+    def setUp(self):
+        red.flushall()
+        MatchThread().start()
+
     def test_speed_queue(self):
-        run_consumers()
         book = []
         for i in range(0, 50000):
             book.append(create_order('bid', 250, 0.0, round(time.time(), 2), 0.1, uuid.uuid4()))
@@ -103,23 +106,26 @@ class MatchOrders(unittest.TestCase):
         t1 = time.time()
         insert_many_orders(book, notify=False)
         t2 = time.time()
-        order_producer.send_messages('order', '')
-        # TODO is there a better way to tell when we are done?
         while 1:
             bid = get_next_order('bid')
             ask = get_next_order('ask')
+            #print "bid: %s\task: %s" % (bid, ask)
             if bid is None or ask is None:
                 break
-            elif time.time() > t2 + 60:
+            elif time.time() > t2 + 120:
                 self.fail("took too long to process orders")
+            else:
+                time.sleep(0.1)
         t3 = time.time()
         self.assertLessEqual(t2 - t1, 3)  # calibrated on Ira's laptop then doubled for margin
-        self.assertLessEqual(t3 - t2, 60)  # calibrated on Ira's laptop then doubled for margin
+        self.assertLessEqual(t3 - t2, 120)  # calibrated on Ira's laptop then doubled for margin
 
         print "time to insert 100k orders: %s" % (t2 - t1)
         print "time to process 100k orders (w/queue): %s" % (t3 - t2)
-        order_producer.send_messages('order', 'terminate')
 
+    def tearDown(self):
+        trade_mq_client.stop()
+        mrunner.stop()
 
 if __name__ == "__main__":
     unittest.main()

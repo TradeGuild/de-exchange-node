@@ -7,13 +7,10 @@ import redis_keys
 
 sys.path.append('../')
 
-from orderbook.kafka_util import get_order_producer
-
 red = redis.StrictRedis()
 red_sub = red.pubsub()
 
 Order = namedtuple('Order', 'side price priority time amount id')
-order_producer = get_order_producer()
 
 
 def create_order(side, price, priority, time, amount, oid=None):
@@ -126,5 +123,4 @@ def insert_many_orders(orders, notify=True):
     if len(asks) > 0:
         #print "zadding %s" % asks
         red.zadd(redis_keys.RKEY['book_side'] % 'ask', *asks)
-    if notify:
-        order_producer.send_messages('order', '')  # empty message is a notification that new orders are available
+

@@ -1,13 +1,39 @@
 from interface import *
-from kafka_util import get_trade_producer, get_order_consumer
+from mq_client import AsyncMQPublisher
+
+Trade = namedtuple('Trade', 'pair price amount bid_id ask_id')
 
 MIN_TRADE = 0.01
 PAIR = 'BTCUSD'
 
-Trade = namedtuple('Trade', 'pair price amount bid_id ask_id')
+# Set up message queue client
+EXCHANGE = 'exchange_matcher'
+EXCHANGE_TYPE = 'fanout'
+TRADE_ROUTING_KEY = "exchange_trades"
+CLIENT_BROKER_URL = "amqp://guest:guest@localhost:5672/%2F" # %2F is "/" encoded
 
-trade_producer = get_trade_producer()
-order_consumer = get_order_consumer()
+class MatchRunner(object):
+
+    def __init__(self):
+        self._keep_alive = True
+
+    def run(self, client):
+        while self._keep_alive:
+            trade = match_orders()
+            if trade is not None:
+                client.publish(json.dumps(trade))
+
+    def stop(self):
+        self._keep_alive = False
+
+mrunner = MatchRunner()
+
+trade_mq_client = AsyncMQPublisher(CLIENT_BROKER_URL,
+                                   mrunner.run,
+                                   exchange=EXCHANGE,
+                                   exchange_type=EXCHANGE_TYPE,
+                                   routing_key=TRADE_ROUTING_KEY,
+                                   content_type='text/plain')
 
 
 def sort_orders_by_priority(bid, ask):
@@ -31,7 +57,7 @@ def sort_orders_by_priority(bid, ask):
             return bid, ask
 
 
-def match_orders(notify=True):
+def match_orders():
     """
     Match orders to create a trade, if possible.
 
@@ -47,37 +73,20 @@ def match_orders(notify=True):
         horder, lorder = sort_orders_by_priority(bid, ask)
         trade_amount = min(bid.amount, ask.amount)
         trade = Trade(PAIR, lorder.price, trade_amount, bid.id, ask.id)
-        # print "creating trade %s" % repr(trade)
         if bid.amount - trade_amount == 0:
-            # print "removing bid %s" % bid.id
             rem_order('bid', create_order_key(bid))
         else:
             newbid = create_order('bid', bid.price, bid.priority, bid.time, bid.amount-trade_amount, bid.id)
-            # print "updating bid to %s" % repr(newbid)
             update_order(newbid)
         if ask.amount - trade_amount == 0:
-            # print "removing ask %s" % ask.id
             rem_order('ask', create_order_key(ask))
         else:
             newask = create_order('ask', ask.price, ask.priority, ask.time, ask.amount-trade_amount, ask.id)
-            # print "updating ask to %s" % repr(newask)
             update_order(newask)
-        if notify:
-            # TODO save trade here and then send an id, or send whole trade?
-            trade_producer.send_messages('trade', json.dumps(trade))
         return trade
     return
 
 
-def run():
-    for message in order_consumer:
-        run_simple()
-
-
-def run_simple():
-    while match_orders():
-            pass
-
-
 if __name__ == '__main__':
-    run()
+    trade_mq_client.run()
+

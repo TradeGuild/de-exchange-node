@@ -1,13 +1,10 @@
 import sys
-import threading
 import time
 import uuid
-from orderbook.kafka_util import get_order_consumer
+import unittest
 
 sys.path.append('../')
-from orderbook.interface import insert_many_orders, Order, create_order
-from orderbook.matcher import match_orders
-
+from dex_node.interface import insert_many_orders, Order, create_order
 
 def create_order_book(price=500.0, tsize=0.1, size=10, offset=0, priority=0.0, insert=True):
     bids = []
@@ -26,23 +23,3 @@ def create_order_book(price=500.0, tsize=0.1, size=10, offset=0, priority=0.0, i
             insert_many_orders([bid, ask])
     return {'bids': bids, 'asks': asks}
 
-
-class OrderConsumer(threading.Thread):
-    daemon = False
-
-    def run(self):
-        for message in get_order_consumer():
-            if message.message.value == 'terminate':
-                return
-            while match_orders():
-                pass
-
-
-threads = [
-    OrderConsumer()
-]
-
-
-def run_consumers():
-    for t in threads:
-        t.start()
