@@ -64,4 +64,4 @@ target/
 
 # temp files
 *~
-
+libsecp256k1

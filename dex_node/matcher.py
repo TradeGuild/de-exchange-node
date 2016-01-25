@@ -22,6 +22,8 @@ class MatchRunner(object):
             trade = match_orders()
             if trade is not None:
                 client.publish(json.dumps(trade))
+            else:
+                time.sleep(0.1)
 
     def stop(self):
         self._keep_alive = False
@@ -76,12 +78,12 @@ def match_orders():
         if bid.amount - trade_amount == 0:
             rem_order('bid', create_order_key(bid))
         else:
-            newbid = create_order('bid', bid.price, bid.priority, bid.time, bid.amount-trade_amount, bid.id)
+            newbid = create_book_order('bid', bid.price, bid.priority, bid.time, bid.amount-trade_amount, bid.id)
             update_order(newbid)
         if ask.amount - trade_amount == 0:
             rem_order('ask', create_order_key(ask))
         else:
-            newask = create_order('ask', ask.price, ask.priority, ask.time, ask.amount-trade_amount, ask.id)
+            newask = create_book_order('ask', ask.price, ask.priority, ask.time, ask.amount-trade_amount, ask.id)
             update_order(newask)
         return trade
     return

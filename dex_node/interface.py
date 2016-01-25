@@ -3,6 +3,7 @@ import json
 import uuid
 import redis
 import sys
+import time
 import redis_keys
 
 sys.path.append('../')
@@ -10,13 +11,20 @@ sys.path.append('../')
 red = redis.StrictRedis()
 red_sub = red.pubsub()
 
-Order = namedtuple('Order', 'side price priority time amount id')
+BookOrder = namedtuple('BookOrder', 'side price priority time amount id')
 
 
-def create_order(side, price, priority, time, amount, oid=None):
+def create_book_order(side, price, priority, time, amount, oid=None):
     if oid is None:
         oid = uuid.uuid4()
-    return Order(side, float(price), float(priority), float(time), float(amount), oid)
+    return BookOrder(side, float(price), float(priority), float(time), float(amount), oid)
+
+
+def create_order_from_Order(order):
+    ti = time.mktime(order.time.timetuple())
+    return create_book_order(order.side, order.price, 0.0, 
+                             ti, order.amount, 
+                             oid=order.id)
 
 
 def get_ticker():
@@ -67,7 +75,7 @@ def decode_order(side, raw_order):
     else:
         order_key, price = get_order_details(raw_order)
     olist = order_key.split(redis_keys.SEP)
-    return create_order(side, price, *olist)
+    return create_book_order(side, price, *olist)
 
 
 def rem_order(side, order_key):
@@ -101,7 +109,7 @@ def insert_order(order, **kwargs):
     insert_many_orders([order], **kwargs)
 
 
-def insert_many_orders(orders, notify=True):
+def insert_many_orders(orders):
     """
     Insert a list of orders.
 

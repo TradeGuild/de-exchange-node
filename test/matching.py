@@ -13,7 +13,7 @@ OB_DIR = os.path.join(os.path.dirname(HERE), 'dex_node')
 
 sys.path.append('../')
 from dex_node.matcher import match_orders, Trade, trade_mq_client, mrunner
-from dex_node.interface import get_next_order, Order, insert_many_orders, create_order
+from dex_node.interface import get_next_order, BookOrder, insert_many_orders, create_book_order
 
 
 class MatchOrders(unittest.TestCase):
@@ -21,8 +21,8 @@ class MatchOrders(unittest.TestCase):
         red.flushall()
 
     def test_match_equal(self):
-        insert_many_orders([create_order('bid', 240, 0.0, str(round(time.time(), 2)), 0.1, str(uuid.uuid4())),
-                            create_order('ask', 240, 0.0, str(round(time.time(), 2)), 0.1, str(uuid.uuid4()))])
+        insert_many_orders([create_book_order('bid', 240, 0.0, str(round(time.time(), 2)), 0.1, str(uuid.uuid4())),
+                            create_book_order('ask', 240, 0.0, str(round(time.time(), 2)), 0.1, str(uuid.uuid4()))])
         trade = match_orders()
         self.assertIsNotNone(trade)
         self.assertIsInstance(trade, Trade)
@@ -32,21 +32,21 @@ class MatchOrders(unittest.TestCase):
         self.assertIsNone(ask)
 
     def test_match_different_amounts(self):
-        insert_many_orders([create_order('bid', 240, 0.0, str(round(time.time(), 2)), 0.2, str(uuid.uuid4())),
-                            create_order('ask', 240, 0.0, str(round(time.time(), 2)), 0.1, str(uuid.uuid4()))])
+        insert_many_orders([create_book_order('bid', 240, 0.0, str(round(time.time(), 2)), 0.2, str(uuid.uuid4())),
+                            create_book_order('ask', 240, 0.0, str(round(time.time(), 2)), 0.1, str(uuid.uuid4()))])
         trade = match_orders()
         self.assertIsNotNone(trade)
         self.assertIsInstance(trade, Trade)
         bid = get_next_order('bid')
         self.assertIsNotNone(bid)
-        self.assertIsInstance(bid, Order)
+        self.assertIsInstance(bid, BookOrder)
         self.assertEqual(bid.amount, 0.1)
         ask = get_next_order('ask')
         self.assertIsNone(ask)
 
     def test_match_different_prices_priority(self):
-        insert_many_orders([create_order('bid', 242, 1.0, str(round(time.time(), 2)), 0.1, str(uuid.uuid4())),
-                            create_order('ask', 240, 0.0, str(round(time.time(), 2)), 0.1, str(uuid.uuid4()))])
+        insert_many_orders([create_book_order('bid', 242, 1.0, str(round(time.time(), 2)), 0.1, str(uuid.uuid4())),
+                            create_book_order('ask', 240, 0.0, str(round(time.time(), 2)), 0.1, str(uuid.uuid4()))])
         trade = match_orders()
         self.assertIsNotNone(trade)
         self.assertIsInstance(trade, Trade)
@@ -60,8 +60,8 @@ class MatchOrders(unittest.TestCase):
         t1 = str(round(time.time(), 2))
         time.sleep(0.015)
         t2 = str(round(time.time(), 2))
-        insert_many_orders([create_order('bid', 242, 0.0, t1, 0.1, str(uuid.uuid4())),
-                            create_order('ask', 240, 0.0, t2, 0.1, str(uuid.uuid4()))])
+        insert_many_orders([create_book_order('bid', 242, 0.0, t1, 0.1, str(uuid.uuid4())),
+                            create_book_order('ask', 240, 0.0, t2, 0.1, str(uuid.uuid4()))])
         trade = match_orders()
         self.assertIsNotNone(trade)
         self.assertIsInstance(trade, Trade)
@@ -74,10 +74,10 @@ class MatchOrders(unittest.TestCase):
     def test_speed(self):
         book = []
         for i in range(0, 50000):
-            book.append(create_order('bid', 250, 0.0, round(time.time(), 2), 0.1, uuid.uuid4()))
-            book.append(create_order('ask', 250, 0.0, round(time.time(), 2), 0.1, uuid.uuid4()))
+            book.append(create_book_order('bid', 250, 0.0, round(time.time(), 2), 0.1, uuid.uuid4()))
+            book.append(create_book_order('ask', 250, 0.0, round(time.time(), 2), 0.1, uuid.uuid4()))
         t1 = time.time()
-        insert_many_orders(book, notify=False)
+        insert_many_orders(book)
         t2 = time.time()
         while match_orders():
             pass
@@ -101,10 +101,10 @@ class MatchOrdersQueue(unittest.TestCase):
     def test_speed_queue(self):
         book = []
         for i in range(0, 50000):
-            book.append(create_order('bid', 250, 0.0, round(time.time(), 2), 0.1, uuid.uuid4()))
-            book.append(create_order('ask', 250, 0.0, round(time.time(), 2), 0.1, uuid.uuid4()))
+            book.append(create_book_order('bid', 250, 0.0, round(time.time(), 2), 0.1, uuid.uuid4()))
+            book.append(create_book_order('ask', 250, 0.0, round(time.time(), 2), 0.1, uuid.uuid4()))
         t1 = time.time()
-        insert_many_orders(book, notify=False)
+        insert_many_orders(book)
         t2 = time.time()
         while 1:
             bid = get_next_order('bid')

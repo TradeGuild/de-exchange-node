@@ -11,7 +11,7 @@ red_sub = red.pubsub()
 sys.path.append('../')
 
 from dex_node.interface import (get_next_order, insert_order,
-                                insert_many_orders, create_order)
+                                insert_many_orders, create_book_order)
 
 
 class CreateOrders(unittest.TestCase):
@@ -24,7 +24,7 @@ class CreateOrders(unittest.TestCase):
         amount = str(1.01)
         price = 240
         priority = str(0.0)
-        order = create_order('bid', price, priority, now, amount, oid)
+        order = create_book_order('bid', price, priority, now, amount, oid)
         insert_order(order)
         time.sleep(0.1)
         got_order = get_next_order('bid', pop=True)
@@ -38,8 +38,8 @@ class CreateOrders(unittest.TestCase):
         amount = str(1.01)
         price = 240
         priority = str(0.0)
-        bid = create_order('bid', price, priority, bid_now, amount, bid_oid)
-        ask = create_order('ask', price, priority, ask_now, amount, ask_oid)
+        bid = create_book_order('bid', price, priority, bid_now, amount, bid_oid)
+        ask = create_book_order('ask', price, priority, ask_now, amount, ask_oid)
         insert_many_orders((bid, ask))
         time.sleep(0.1)
         got_bid = get_next_order('bid', pop=True)
@@ -72,9 +72,9 @@ class GetOrders(unittest.TestCase):
 
     def test_priority_sort(self):
         tsize = 1.01
-        highorder = create_order('ask', 240, str(2.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
-        mediumorder = create_order('ask', 240, str(1.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
-        loworder = create_order('ask', 240, str(0.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
+        highorder = create_book_order('ask', 240, str(2.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
+        mediumorder = create_book_order('ask', 240, str(1.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
+        loworder = create_book_order('ask', 240, str(0.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
 
         insert_many_orders([loworder, highorder, mediumorder])
 
@@ -87,9 +87,9 @@ class GetOrders(unittest.TestCase):
 
     def test_price_sort(self):
         tsize = 1.01
-        loworder = create_order('ask', 239, str(2.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
-        mediumorder = create_order('ask', 240, str(1.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
-        highorder = create_order('ask', 241, str(0.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
+        loworder = create_book_order('ask', 239, str(2.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
+        mediumorder = create_book_order('ask', 240, str(1.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
+        highorder = create_book_order('ask', 241, str(0.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
 
         insert_many_orders([loworder, highorder, mediumorder])
 
@@ -102,11 +102,11 @@ class GetOrders(unittest.TestCase):
 
     def test_time_sort(self):
         tsize = 1.01
-        loworder = create_order('ask', 240, str(0.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
+        loworder = create_book_order('ask', 240, str(0.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
         time.sleep(0.1)
-        mediumorder = create_order('ask', 240, str(0.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
+        mediumorder = create_book_order('ask', 240, str(0.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
         time.sleep(0.1)
-        highorder = create_order('ask', 240, str(0.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
+        highorder = create_book_order('ask', 240, str(0.0), str(round(time.time(), 2)), str(tsize), str(uuid.uuid4()))
 
         insert_many_orders([loworder, highorder, mediumorder])
 
@@ -119,11 +119,11 @@ class GetOrders(unittest.TestCase):
 
     def test_amount_sort(self):
         now = str(round(time.time(), 2))
-        loworder = create_order('ask', 240, str(0.0), now, str(1), str(uuid.uuid4()))
+        loworder = create_book_order('ask', 240, str(0.0), now, str(1), str(uuid.uuid4()))
         time.sleep(0.1)
-        mediumorder = create_order('ask', 240, str(0.0), now, str(2), str(uuid.uuid4()))
+        mediumorder = create_book_order('ask', 240, str(0.0), now, str(2), str(uuid.uuid4()))
         time.sleep(0.1)
-        highorder = create_order('ask', 240, str(0.0), now, str(3), str(uuid.uuid4()))
+        highorder = create_book_order('ask', 240, str(0.0), now, str(3), str(uuid.uuid4()))
 
         insert_many_orders([loworder, highorder, mediumorder])
 
